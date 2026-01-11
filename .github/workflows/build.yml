@@ -15,16 +15,42 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: 'stable'
+
+      - name: Remove old ChromeDriver
+        run: |
+          sudo rm -f /usr/bin/chromedriver
+          echo "Old ChromeDriver removed from /usr/bin/chromedriver"
+
+      - name: Verify Chrome installation
+        run: |
+          google-chrome --version
+          echo "Chrome setup complete"
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Start application in test mode
         run: |
           nohup java -jar artifacts/app-ibank.jar -P:profile=test &
+          APP_PID=$!
+          echo "Application started with PID: $APP_PID"
           sleep 10
+          
+          if ps -p $APP_PID > /dev/null; then
+            echo "Application is running"
+          else
+            echo "ERROR: Application failed to start"
+            exit 1
+          fi
 
       - name: Build with Gradle
         run: ./gradlew test --info
 
       - name: Stop application
-        run: pkill -f "app-ibank.jar"
+        run: |
+          pkill -f "app-ibank.jar" || true
+          echo "Application stopped"
