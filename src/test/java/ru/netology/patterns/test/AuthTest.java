@@ -9,26 +9,32 @@ import org.junit.jupiter.api.Test;
 import org.openqa.selenium.chrome.ChromeOptions;
 import ru.netology.patterns.data.DataGenerator;
 
+import java.time.Duration;
+
 import static com.codeborne.selenide.Selenide.*;
 
 public class AuthTest {
 
     @BeforeAll
     static void setUpAll() {
-        Configuration.timeout = 15000;
+        // Увеличиваем таймауты для CI
+        Configuration.timeout = 20000;
         Configuration.browserSize = "1280x800";
 
+        // Настройки для стабильной работы в CI
         Configuration.headless = true;
         Configuration.browserCapabilities = new ChromeOptions()
                 .addArguments("--no-sandbox")
                 .addArguments("--disable-dev-shm-usage")
                 .addArguments("--disable-gpu")
-                .addArguments("--remote-allow-origins=*");
+                .addArguments("--remote-allow-origins=*")
+                .addArguments("--window-size=1280,800");
     }
 
     @BeforeEach
     void setUp() {
         open("http://localhost:9999");
+        $("[data-test-id=login]").shouldBe(Condition.visible, Duration.ofSeconds(10));
     }
 
     @Test
@@ -40,7 +46,7 @@ public class AuthTest {
         $("[data-test-id=password] input").setValue(registeredUser.getPassword());
         $("[data-test-id=action-login]").click();
 
-        $("[data-test-id=dashboard]").shouldBe(Condition.visible);
+        $("[data-test-id=dashboard]").shouldBe(Condition.visible, Duration.ofSeconds(15));
     }
 
     @Test
@@ -52,7 +58,10 @@ public class AuthTest {
         $("[data-test-id=password] input").setValue(blockedUser.getPassword());
         $("[data-test-id=action-login]").click();
 
-        $("[data-test-id=error-notification] .notification__content")
+        // Ждем появления уведомления об ошибке
+        $("[data-test-id=error-notification]")
+                .shouldBe(Condition.visible, Duration.ofSeconds(10))
+                .$(".notification__content")
                 .shouldHave(Condition.text("Ошибка! Пользователь заблокирован"));
     }
 
@@ -65,7 +74,10 @@ public class AuthTest {
         $("[data-test-id=password] input").setValue(notRegisteredUser.getPassword());
         $("[data-test-id=action-login]").click();
 
-        $("[data-test-id=error-notification] .notification__content")
+        // Ждем появления уведомления об ошибке
+        $("[data-test-id=error-notification]")
+                .shouldBe(Condition.visible, Duration.ofSeconds(10))
+                .$(".notification__content")
                 .shouldHave(Condition.text("Ошибка! Неверно указан логин или пароль"));
     }
 
@@ -78,7 +90,10 @@ public class AuthTest {
         $("[data-test-id=password] input").setValue(registeredUser.getPassword());
         $("[data-test-id=action-login]").click();
 
-        $("[data-test-id=error-notification] .notification__content")
+        // Ждем появления уведомления об ошибке
+        $("[data-test-id=error-notification]")
+                .shouldBe(Condition.visible, Duration.ofSeconds(10))
+                .$(".notification__content")
                 .shouldHave(Condition.text("Ошибка! Неверно указан логин или пароль"));
     }
 
@@ -91,7 +106,10 @@ public class AuthTest {
         $("[data-test-id=password] input").setValue("wrong");
         $("[data-test-id=action-login]").click();
 
-        $("[data-test-id=error-notification] .notification__content")
+        // Ждем появления уведомления об ошибке
+        $("[data-test-id=error-notification]")
+                .shouldBe(Condition.visible, Duration.ofSeconds(10))
+                .$(".notification__content")
                 .shouldHave(Condition.text("Ошибка! Неверно указан логин или пароль"));
     }
 }

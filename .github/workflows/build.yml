@@ -23,28 +23,34 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Start application with verbose logging
+      - name: Start application
         run: |
           echo "Starting application..."
-          java -jar artifacts/app-ibank.jar -P:profile=test &
+          # Удаляем предыдущий процесс если остался
+          pkill -f "app-ibank.jar" || true
+          
+          java -jar artifacts/app-ibank.jar &
           APP_PID=$!
           echo "Application PID: $APP_PID"
           
-          sleep 10
+          echo "Waiting for application to start..."
+          for i in {1..20}; do
+            if curl -f http://localhost:9999 > /dev/null 2>&1; then
+              echo "✓ Application is ready on port 9999"
+              break
+            fi
+            echo "Waiting... ($i/20)"
+            sleep 1
+          done
           
-          if ps -p $APP_PID > /dev/null; then
-            echo "Application process is running"
+          if curl -f http://localhost:9999 > /dev/null 2>&1; then
+            echo "SUCCESS: Application is running and accessible"
           else
-            echo "ERROR: Application process died"
-            exit 1
-          fi
-          
-          if netstat -tuln | grep :9999 > /dev/null; then
-            echo "SUCCESS: Application is listening on port 9999"
-            curl -s http://localhost:9999 || echo "Curl check completed"
-          else
-            echo "ERROR: Application is NOT listening on port 9999"
-            netstat -tuln
+            echo "ERROR: Application failed to start"
+            echo "Process status:"
+            ps -p $APP_PID > /dev/null && echo "Process is running" || echo "Process died"
+            echo "Port check:"
+            netstat -tuln | grep :9999 || echo "Port 9999 not listening"
             exit 1
           fi
 
