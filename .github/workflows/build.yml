@@ -20,38 +20,31 @@ jobs:
         with:
           chrome-version: 'stable'
 
-      - name: Remove old ChromeDriver
-        run: |
-          sudo rm -f /usr/bin/chromedriver
-          echo "Old ChromeDriver removed from /usr/bin/chromedriver"
-
-      - name: Verify Chrome installation
-        run: |
-          echo "Chrome version:"
-          google-chrome --version
-          echo "Chrome setup complete"
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Start application in test mode
+      - name: Start application with verbose logging
         run: |
-          echo "Starting application on port 9999..."
-          nohup java -jar artifacts/app-ibank.jar -P:profile=test &
+          echo "Starting application..."
+          java -jar artifacts/app-ibank.jar -P:profile=test &
           APP_PID=$!
-          echo "Application started with PID: $APP_PID"
+          echo "Application PID: $APP_PID"
+          
           sleep 10
           
-          if curl -f http://localhost:9999 > /dev/null 2>&1; then
-            echo "Application is running on port 9999"
+          if ps -p $APP_PID > /dev/null; then
+            echo "Application process is running"
           else
-            echo "ERROR: Application failed to start on port 9999"
-            echo "Trying to check process..."
-            if ps -p $APP_PID > /dev/null; then
-              echo "Process is running but port might be different"
-            else
-              echo "Process is not running"
-            fi
+            echo "ERROR: Application process died"
+            exit 1
+          fi
+          
+          if netstat -tuln | grep :9999 > /dev/null; then
+            echo "SUCCESS: Application is listening on port 9999"
+            curl -s http://localhost:9999 || echo "Curl check completed"
+          else
+            echo "ERROR: Application is NOT listening on port 9999"
+            netstat -tuln
             exit 1
           fi
 

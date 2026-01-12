@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.chrome.ChromeOptions;
 import ru.netology.patterns.data.DataGenerator;
 
 import static com.codeborne.selenide.Selenide.*;
@@ -16,6 +17,13 @@ public class AuthTest {
     static void setUpAll() {
         Configuration.timeout = 15000;
         Configuration.browserSize = "1280x800";
+
+        Configuration.headless = true;
+        Configuration.browserCapabilities = new ChromeOptions()
+                .addArguments("--no-sandbox")
+                .addArguments("--disable-dev-shm-usage")
+                .addArguments("--disable-gpu")
+                .addArguments("--remote-allow-origins=*");
     }
 
     @BeforeEach
