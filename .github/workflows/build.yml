@@ -27,6 +27,7 @@ jobs:
 
       - name: Verify Chrome installation
         run: |
+          echo "Chrome version:"
           google-chrome --version
           echo "Chrome setup complete"
 
@@ -35,15 +36,22 @@ jobs:
 
       - name: Start application in test mode
         run: |
+          echo "Starting application on port 9999..."
           nohup java -jar artifacts/app-ibank.jar -P:profile=test &
           APP_PID=$!
           echo "Application started with PID: $APP_PID"
           sleep 10
           
-          if ps -p $APP_PID > /dev/null; then
-            echo "Application is running"
+          if curl -f http://localhost:9999 > /dev/null 2>&1; then
+            echo "Application is running on port 9999"
           else
-            echo "ERROR: Application failed to start"
+            echo "ERROR: Application failed to start on port 9999"
+            echo "Trying to check process..."
+            if ps -p $APP_PID > /dev/null; then
+              echo "Process is running but port might be different"
+            else
+              echo "Process is not running"
+            fi
             exit 1
           fi
 
