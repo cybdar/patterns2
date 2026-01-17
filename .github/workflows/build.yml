@@ -15,49 +15,17 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Set up Chrome
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: 'stable'
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Start application
+      - name: Start application in test mode
         run: |
-          echo "Starting application..."
-          # Удаляем предыдущий процесс если остался
-          pkill -f "app-ibank.jar" || true
-          
-          java -jar artifacts/app-ibank.jar &
-          APP_PID=$!
-          echo "Application PID: $APP_PID"
-          
-          echo "Waiting for application to start..."
-          for i in {1..20}; do
-            if curl -f http://localhost:9999 > /dev/null 2>&1; then
-              echo "✓ Application is ready on port 9999"
-              break
-            fi
-            echo "Waiting... ($i/20)"
-            sleep 1
-          done
-          
-          if curl -f http://localhost:9999 > /dev/null 2>&1; then
-            echo "SUCCESS: Application is running and accessible"
-          else
-            echo "ERROR: Application failed to start"
-            echo "Process status:"
-            ps -p $APP_PID > /dev/null && echo "Process is running" || echo "Process died"
-            echo "Port check:"
-            netstat -tuln | grep :9999 || echo "Port 9999 not listening"
-            exit 1
-          fi
+          java -jar artifacts/app-ibank.jar -P:profile=test &
+          sleep 15
 
       - name: Build with Gradle
-        run: ./gradlew test --info
+        run: ./gradlew test --info -Dselenide.headless=true
 
       - name: Stop application
         run: |
           pkill -f "app-ibank.jar" || true
-          echo "Application stopped"
